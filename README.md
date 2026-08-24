@@ -29,6 +29,7 @@ number is reproducible.
 ```bash
 python3 hitl_sim.py          # the four case study scenarios
 python3 hitl_sim.py sweep    # lambda sweep: where the threshold sits
+python3 hitl_sim.py demo     # one scenario at a time: demo | surge | closed | gate
 ```
 
 Requires Python 3.8+, standard library only.

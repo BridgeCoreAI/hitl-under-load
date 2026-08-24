@@ -21,8 +21,10 @@ Two failures, two different fixes:
   validity  = an architecture problem (the gate)
   capacity  = a design problem (staffing, timeouts, escalation)
 
-Run:  python3 hitl_sim.py           # case study scenarios
+Run:  python3 hitl_sim.py           # all four case study scenarios
       python3 hitl_sim.py sweep     # lambda sweep behind chart 1
+      python3 hitl_sim.py demo      # single scenario, for live presentation
+      python3 hitl_sim.py surge     #   demo | surge | closed | gate
 """
 
 import heapq
@@ -165,24 +167,32 @@ class HitlSim:
         }
 
 
-def case_study_runs():
-    """The configurations behind the case study findings."""
+def scenarios():
+    """The configurations behind the case study findings.
+    Keys double as single-scenario demo commands for live presentation."""
     base = dict(service_rate=10.0, timeout_min=10.0, duration_min=480.0)
-    runs = [
-        ("Demo load (lambda=6, fail-open)",
-         Config(arrival_rate=6.0,  policy=TimeoutPolicy.FAIL_OPEN,   **base)),
-        ("Surge (lambda=30, fail-open, no gate)",
-         Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_OPEN,   **base)),
-        ("Surge (lambda=30, fail-closed, no gate)",
-         Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_CLOSED, **base)),
-        ("Surge (lambda=30, fail-open, gate on)",
-         Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_OPEN, gate=True, **base)),
-    ]
-    for label, cfg in runs:
-        r = HitlSim(cfg).run()
-        print(f"\n{label}")
-        for k, v in r.items():
-            print(f"  {k:24} {v}")
+    return {
+        "demo":   ("Demo load (lambda=6, fail-open)",
+                   Config(arrival_rate=6.0,  policy=TimeoutPolicy.FAIL_OPEN,   **base)),
+        "surge":  ("Surge (lambda=30, fail-open, no gate)",
+                   Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_OPEN,   **base)),
+        "closed": ("Surge (lambda=30, fail-closed, no gate)",
+                   Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_CLOSED, **base)),
+        "gate":   ("Surge (lambda=30, fail-open, gate on)",
+                   Config(arrival_rate=30.0, policy=TimeoutPolicy.FAIL_OPEN, gate=True, **base)),
+    }
+
+
+def print_run(label, cfg):
+    r = HitlSim(cfg).run()
+    print(f"\n{label}")
+    for k, v in r.items():
+        print(f"  {k:24} {v}")
+
+
+def case_study_runs():
+    for label, cfg in scenarios().values():
+        print_run(label, cfg)
 
 
 def sweep():
@@ -197,10 +207,16 @@ def sweep():
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "sweep":
-        sweep()
-    else:
-        case_study_runs()
+    if len(sys.argv) > 1:
+        arg = sys.argv[1]
+        if arg == "sweep":
+            sweep()
+            return
+        if arg in scenarios():
+            label, cfg = scenarios()[arg]
+            print_run(label, cfg)
+            return
+    case_study_runs()
 
 
 if __name__ == "__main__":
