@@ -1,4 +1,8 @@
+[![tests](https://github.com/BridgeCoreAI/hitl-under-load/actions/workflows/tests.yml/badge.svg)](https://github.com/BridgeCoreAI/hitl-under-load/actions/workflows/tests.yml)
+
 # HITL Under Load
+
+Recorded runs with commit bindings: see the [Actions tab](https://github.com/BridgeCoreAI/hitl-under-load/actions/workflows/tests.yml). Every number in this README and the case study is re-verified by executable tests on every push.
 
 **At what load does "human in the loop" quietly become "acted anyway"?**
 
