@@ -37,7 +37,7 @@ First, the demo. At six items per minute against a human who clears ten, the sys
 
 Then we sweep the load upward.
 
-[INSERT CHART 1 HERE — chart1_threshold.png]
+![Chart 1: the silent-action curve as load rises](chart1_threshold.png)
 
 At λ = 8, still perfect. At λ = 10, the first 64 silent actions appear. That number is not a coincidence: λ = 10 is exactly the human's capacity. The moment arrival rate reaches service rate, ordinary randomness starts pushing items past the timeout, and the default begins making decisions.
 
@@ -55,13 +55,13 @@ Now every arriving item is either admissible or in violation of a constraint (un
 
 Same surge day (λ = 30), three configurations:
 
-[INSERT CHART 2 HERE — chart2_gate.png]
+![Chart 2: the admissibility gate resolves the dilemma](chart2_gate.png)
 
-**Fail open, no gate:** 3,677 inadmissible actions executed with zero human review. Constraint violations, approved by a timeout while the human was drowning. This is the safety failure, and it is invisible in every demo.
+**Fail open, no gate:** 3,859 inadmissible actions executed with zero human review. Constraint violations, approved by a timeout while the human was drowning. This is the safety failure, and it is invisible in every demo.
 
 **Fail closed, no gate:** zero inadmissible executions. But 5,628 perfectly admissible items were blocked with them. Safety purchased by stopping the business. This is the availability failure.
 
-**Gate on:** zero inadmissible actions executed. Zero admissible work blocked. The gate rejected 5,778 violations at arrival and the human's queue shrank to genuine work only.
+**Gate on:** zero inadmissible actions executed. Zero admissible work blocked. The gate rejected 5,800 violations at arrival and the human's queue shrank to genuine work only.
 
 The dilemma the second commenter posed has a measured answer. You do not have to choose between acting unsafely and stopping the business. But you only escape that choice if admissibility is established by architecture, before execution, instead of being delegated to human vigilance during it.
 
