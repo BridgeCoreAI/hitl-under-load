@@ -62,9 +62,32 @@ capacity problem not at all. With the gate on, 25.7% of decisions are still
 made by the timeout. Validity is an architecture problem. Capacity is a design
 problem. Do not confuse them.
 
+## Early warning: seeing the handoff before it happens
+
+`early_warning.py` extends the simulator without modifying it. A subclass records a
+snapshot of the queue every simulated minute and compares three alert rules against
+the first decision handed to the timeout default. Thresholds (0.8 utilization, 50% of
+the timeout, ten minutes of queue growth) are judgment calls, not findings.
+
+```bash
+python3 early_warning.py     # lead times, 20 seeds per load
+```
+
+| Load (per min) | A: utilization | B: deadline proximity | C: queue growth |
+|---|---|---|---|
+| 10 | 246 | 67 | 202 |
+| 11 | 76 | 37 | 66 |
+| 12 | 44 | 25 | 32 |
+| 15 | 20 | 14 | 10 |
+
+Median minutes of warning before the first default. Utilization and queue growth warn
+early but are noisy on days with no default; deadline proximity is quiet but gives the
+least notice. Suggested tiers: WATCH (A or C), ACT (B), HANDOFF (default share above 0).
+
 ## Files
 
 - `hitl_sim.py` — the simulator, single file, no dependencies
+- `early_warning.py` — early-warning extension: telemetry subclass and alert rules
 - `chart1_threshold.png` — Finding 1: the silent-action curve
 - `chart2_gate.png` — Finding 2: the gate resolves the dilemma
 - `Case Study — Human Oversight Under Load.md` — the full write-up
