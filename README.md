@@ -84,10 +84,79 @@ Median minutes of warning before the first default. Utilization and queue growth
 early but are noisy on days with no default; deadline proximity is quiet but gives the
 least notice. Suggested tiers: WATCH (A or C), ACT (B), HANDOFF (default share above 0).
 
+## Intervention margin: was the warning early enough to act?
+
+`intervention_margin.py` extends the early warning analysis without modifying it. It
+reuses `evaluate` and the three alert rules from `early_warning.py`, so no simulator
+or rule logic is duplicated and `hitl_sim.py` and `early_warning.py` are unchanged.
+
+An early alert is not the same as a usable alert. A warning that arrives one minute
+before the first default is early, but no person can respond in one minute if the
+assumed response takes five. The extension subtracts an assumed response time from
+the warning lead time.
+
+```
+Warning lead time   = first default time minus alert time
+Intervention margin = warning lead time minus required human response time
+```
+
+The required human response time is an explicit assumption set by the person running
+the analysis. It is not an empirical finding, and the defaults of 2, 5 and 10 minutes
+are illustrative only.
+
+Every run, for every alert rule, falls in exactly one of five categories, and the
+counts are kept separate:
+
+| Category | Meaning |
+|---|---|
+| No default | No decision was handed to the timeout default, so there is nothing to warn about |
+| No advance alert | A default occurred, but the rule did not alert strictly before it |
+| Positive margin | The alert left more time than the assumed human response |
+| Zero margin | The alert left exactly the assumed human response time |
+| Negative margin | The alert came before the default but left too little time for the assumed response |
+
+A negative margin is not a missed alert, and it is not a sufficient one either. The
+alert was early, yet under the stated assumption a person would still have run out of
+time. It is counted on its own.
+
+```bash
+python3 intervention_margin.py                                    # default response times 2, 5, 10
+python3 intervention_margin.py --response-times 3 8 --lambdas 10 12 --seeds 20
+python3 -m pytest -q                                              # existing and new tests
+```
+
+Observed output with an assumed response time of 10 minutes, 20 seeds per load, fail
+open, capacity 10 per minute, timeout 10 minutes. Each rule cell reads positive / zero
+/ negative.
+
+| Load (per min) | No default | No advance alert | A: utilization | B: deadline proximity | C: queue growth |
+|---|---|---|---|---|---|
+| 10 | 7 | 0 | 13 / 0 / 0 | 13 / 0 / 0 | 13 / 0 / 0 |
+| 12 | 0 | 0 | 20 / 0 / 0 | 20 / 0 / 0 | 20 / 0 / 0 |
+| 15 | 0 | 0 | 20 / 0 / 0 | 20 / 0 / 0 | 11 / 0 / 9 |
+
+Observations from this run only: no rule failed to alert before a default in any of
+the 20 seeds at these loads, and the only negative margins appear for queue growth at
+15 per minute under the 10 minute assumption. Run the command with other response
+times to see the full tables for every load. How these counts bear on a real process
+depends on a real response time, which this simulation does not supply.
+
+Verification: the complete suite, 48 tests (20 existing and 28 new), passed with
+`python3 -m pytest -q` and with `python3 -m unittest discover -s tests`. The new tests
+cover positive, zero and negative margins, no advance alert, no default, different
+response times, deterministic reproduction, every alert rule, separate aggregate
+counts, and unchanged existing simulator and early warning results.
+
+Limitations: the simulation is synthetic. Arrivals, service times and alert thresholds
+are modeling choices. One response time is applied to every run, while real response
+times vary. Nothing here measures production effectiveness or real staffing.
+
 ## Files
 
 - `hitl_sim.py` — the simulator, single file, no dependencies
 - `early_warning.py` — early-warning extension: telemetry subclass and alert rules
+- `intervention_margin.py`: intervention margin extension, reuses the early warning rules
+- `tests/test_intervention_margin.py`: tests for the intervention margin extension
 - `chart1_threshold.png` — Finding 1: the silent-action curve
 - `chart2_gate.png` — Finding 2: the gate resolves the dilemma
 - `Case Study — Human Oversight Under Load.md` — the full write-up
